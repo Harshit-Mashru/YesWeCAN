@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "hzl_clientos.h": "c",
+        "hzl_serveros.h": "c"
+    }
+}
