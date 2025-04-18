@@ -197,21 +197,55 @@ void randomize_pkt(int start, int stop)
 	}
 }
 
-void send_lock(char door)
+void send_lock(char door, hzl_ClientCtx_t *doors_client)
 {
 	door_state |= door;
 	memset(&cf, 0, sizeof(cf));
 	cf.can_id = door_id;
 	cf.len = door_len;
 	cf.data[door_pos] = door_state;
-	if (door_pos)
-		randomize_pkt(0, door_pos);
-	if (door_len != door_pos + 1)
-		randomize_pkt(door_pos + 1, door_len);
-	send_pkt(CAN_MTU);
+
+	hzl_Err_t err;
+	hzl_CbsPduMsg_t *pPdu; // Packed data, fits into one CAN FD message
+	err = hzl_ClientNewMsg(&pPdu);
+
+
+	hzl_Gid_t destinationGroupId = 1;
+
+
+	//Can't send full 64 bytes because of over-head of encryption
+	//Send 32 bytes instead
+	err = hzl_ClientBuildSecuredFd(pPdu, doors_client, cf.data, sizeof(cf.data) - 32, destinationGroupId);
+	if (err == HZL_ERR_SESSION_NOT_ESTABLISHED)
+	{
+		printf("ERROR NO SESSION \n");
+	} else if (err == HZL_ERR_NULL_PDU) {
+		printf("NULL PDU \n");
+	} else if(err == HZL_ERR_NULL_SDU) {
+		printf("NULL user data\n");
+	} else if(err == HZL_ERR_TOO_LONG_SDU) {
+		printf("DATA TOO LONG\n");
+	} else if(err == HZL_ERR_GID_TOO_LARGE_FOR_CONFIGURED_HEADER_TYPE) {
+		printf("CANT FIT GROUP ID\n");
+	} else if(err == HZL_ERR_UNKNOWN_GROUP) {
+		printf("UNKNOWN GROUP\n");
+	} else if (err == HZL_ERR_CANNOT_GENERATE_RANDOM) {
+		printf("CANNOT GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GENERATE_NON_ZERO_RANDOM ) {
+		printf("CANNOT NON_ZERO GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GET_CURRENT_TIME ) {
+		printf("CANNOT GET CURRENT TIME\n");
+	} else if(err != HZL_OK){
+		printf("SOME ERROR ENCRYPTING MESSAGE\n");
+	}
+	memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
+	cf.len = pPdu->dataLen;
+		// if(signal_pos) randomize_pkt(0, signal_pos);
+		// if(signal_len != signal_pos + 1) randomize_pkt(signal_pos+1, signal_len);
+	send_pkt(CANFD_MTU);
 }
 
-void send_unlock(char door)
+void send_unlock(char door, hzl_ClientCtx_t *doors_client)
 {
 	printf("Sendind Unlock\n");
 	door_state &= ~door;
@@ -219,11 +253,45 @@ void send_unlock(char door)
 	cf.can_id = door_id;
 	cf.len = door_len;
 	cf.data[door_pos] = door_state;
-	if (door_pos)
-		randomize_pkt(0, door_pos);
-	if (door_len != door_pos + 1)
-		randomize_pkt(door_pos + 1, door_len);
-	send_pkt(CAN_MTU);
+
+
+	hzl_Err_t err;
+	hzl_CbsPduMsg_t *pPdu; // Packed data, fits into one CAN FD message
+	err = hzl_ClientNewMsg(&pPdu);
+
+
+	hzl_Gid_t destinationGroupId = 1;
+
+	//Can't send full 64 bytes because of over-head of encryption
+	//Send 32 bytes instead
+	err = hzl_ClientBuildSecuredFd(pPdu, doors_client, cf.data, sizeof(cf.data) - 32, destinationGroupId);
+	if (err == HZL_ERR_SESSION_NOT_ESTABLISHED)
+	{
+		printf("ERROR NO SESSION \n");
+	} else if (err == HZL_ERR_NULL_PDU) {
+		printf("NULL PDU \n");
+	} else if(err == HZL_ERR_NULL_SDU) {
+		printf("NULL user data\n");
+	} else if(err == HZL_ERR_TOO_LONG_SDU) {
+		printf("DATA TOO LONG\n");
+	} else if(err == HZL_ERR_GID_TOO_LARGE_FOR_CONFIGURED_HEADER_TYPE) {
+		printf("CANT FIT GROUP ID\n");
+	} else if(err == HZL_ERR_UNKNOWN_GROUP) {
+		printf("UNKNOWN GROUP\n");
+	} else if (err == HZL_ERR_CANNOT_GENERATE_RANDOM) {
+		printf("CANNOT GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GENERATE_NON_ZERO_RANDOM ) {
+		printf("CANNOT NON_ZERO GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GET_CURRENT_TIME ) {
+		printf("CANNOT GET CURRENT TIME\n");
+	} else if(err != HZL_OK){
+		printf("SOME ERROR ENCRYPTING MESSAGE\n");
+	}
+	memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
+	cf.len = pPdu->dataLen;
+		// if(signal_pos) randomize_pkt(0, signal_pos);
+		// if(signal_len != signal_pos + 1) randomize_pkt(signal_pos+1, signal_len);
+	send_pkt(CANFD_MTU);
 }
 
 void send_speed()
@@ -688,23 +756,30 @@ int main(int argc, char *argv[])
 
 	hzl_Err_t err;
 	hzl_ClientCtx_t *signals_client;
+	hzl_ClientCtx_t *doors_client;
 
 	err = hzl_ClientNew(&signals_client, "config/Signals.hzl");
 	if (err != HZL_OK)
 	{
 		printf("Error with Signals Init");
 	}
-	hzl_CbsPduMsg_t *pPdu; // Packed data, fits into one CAN FD message
+	err = hzl_ClientNew(&doors_client, "config/Doors.hzl");
+	if (err != HZL_OK)
+	{
+		printf("Error with Doors Init");
+	}
+	
+	hzl_CbsPduMsg_t *pPduSignals; // Packed data, fits into one CAN FD message
 
 	// Let's allocate the memory for a message we want to send
-	err = hzl_ClientNewMsg(&pPdu);
+	err = hzl_ClientNewMsg(&pPduSignals);
 	if (err != HZL_OK)
 	{
 		printf("Error with Signal Message Allocation");
 	}
 	// To start secured communication within a Group, we need to start a handshake
 	hzl_Gid_t destinationGroupId = 1; // The set of nodes we want to talk to
-	err = hzl_ClientBuildRequest(pPdu, signals_client, destinationGroupId);
+	err = hzl_ClientBuildRequest(pPduSignals, signals_client, destinationGroupId);
 	if (err != HZL_OK)
 	{
 		printf("Error with Signal Message Build");
@@ -713,11 +788,12 @@ int main(int argc, char *argv[])
 
 	memset(&cf, 0, sizeof(cf));
 	cf.can_id = signal_id;
-	cf.len = pPdu->dataLen;
-	memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
+	cf.len = pPduSignals->dataLen;
+	memcpy(cf.data, pPduSignals->data, sizeof(pPduSignals->data));
 	send_pkt(CANFD_MTU);
 
 	int signal_init = 0;
+	int door_init = 0;
 	int nbytes = 0;
 	while (signal_init == 0)
 	{
@@ -739,16 +815,59 @@ int main(int argc, char *argv[])
 			{
 				printf("SIGNALS INIT OK\n");
 			}
-			// memset(&cf, 0, sizeof(cf));
-			// cf.can_id = signal_id;
-			// uint8_t some_data[] = {0};
-			// err = hzl_ClientBuildSecuredFd(pPdu, signals_client, some_data, sizeof(some_data), destinationGroupId);
-			// memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
-			// cf.len = pPdu->dataLen;
-			// send_pkt(CANFD_MTU);
-			// printf("SENT IN BEGINNNG\n");
-			// send_test(signals_client, pPdu);
+		}
 
+		
+	}
+
+
+	// STARTING DOOR
+
+	hzl_CbsPduMsg_t *pPduDoors; // Packed data, fits into one CAN FD message
+
+	// Let's allocate the memory for a message we want to send
+	err = hzl_ClientNewMsg(&pPduDoors);
+	if (err != HZL_OK)
+	{
+		printf("Error with Door Message Allocation");
+	}
+	// To start secured communication within a Group, we need to start a handshake
+	// hzl_Gid_t destinationGroupId = 1; // The set of nodes we want to talk to
+	err = hzl_ClientBuildRequest(pPduDoors, doors_client, destinationGroupId);
+	if (err != HZL_OK)
+	{
+		printf("Error with Door Message Build");
+	}
+	// The Request message is built, the user must transmit it manually
+
+	memset(&cf, 0, sizeof(cf));
+	cf.can_id = door_id;
+	cf.len = pPduDoors->dataLen;
+	memcpy(cf.data, pPduDoors->data, sizeof(pPduDoors->data));
+	send_pkt(CANFD_MTU);
+
+	nbytes = 0;
+	while (door_init == 0)
+	{
+		nbytes = recvmsg(s, &msg, 0);
+		if (nbytes > 0 && cf.can_id == door_id)
+		{
+			door_init = 1;
+			hzl_CbsPduMsg_t reactionPdu;
+			hzl_RxSduMsg_t userData;
+			hzl_Err_t hzlErrCode = hzl_ClientProcessReceived(
+				&reactionPdu, // automatic internal reaction message, if required
+				&userData,	  // decrypted user-data, if the message had any
+				doors_client,
+				cf.data,  // the CAN FD payload as received from the layer below
+				cf.len,	  // the CAN FD payload length in bytes (CAN DLC)
+				cf.can_id // the CAN ID of the message had
+			);
+			printf("%d", hzlErrCode);
+			if (hzlErrCode == HZL_OK)
+			{
+				printf("DOORS INIT OK\n");
+			}
 		}
 	}
 
@@ -912,51 +1031,51 @@ int main(int argc, char *argv[])
 				case SDLK_LSHIFT:
 					lock_enabled = 1;
 					if (unlock_enabled)
-						send_lock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK);
+						send_lock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK, doors_client);
 					break;
 				case SDLK_RSHIFT:
 					unlock_enabled = 1;
 					if (lock_enabled)
-						send_unlock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK);
+						send_unlock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK, doors_client);
 					break;
 				case SDLK_a:
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR1_LOCK);
+						send_lock(CAN_DOOR1_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR1_LOCK);
+						send_unlock(CAN_DOOR1_LOCK, doors_client);
 					}
 					break;
 				case SDLK_b:
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR2_LOCK);
+						send_lock(CAN_DOOR2_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR2_LOCK);
+						send_unlock(CAN_DOOR2_LOCK, doors_client);
 					}
 					break;
 				case SDLK_x:
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR3_LOCK);
+						send_lock(CAN_DOOR3_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR3_LOCK);
+						send_unlock(CAN_DOOR3_LOCK, doors_client);
 					}
 					break;
 				case SDLK_y:
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR4_LOCK);
+						send_lock(CAN_DOOR4_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR4_LOCK);
+						send_unlock(CAN_DOOR4_LOCK, doors_client);
 					}
 					break;
 				}
@@ -1015,23 +1134,23 @@ int main(int argc, char *argv[])
 				{
 					lock_enabled = 1;
 					if (unlock_enabled)
-						send_lock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK);
+						send_lock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK, doors_client);
 				}
 				else if (button == gButtonUnlock)
 				{
 					unlock_enabled = 1;
 					if (lock_enabled)
-						send_unlock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK);
+						send_unlock(CAN_DOOR1_LOCK | CAN_DOOR2_LOCK | CAN_DOOR3_LOCK | CAN_DOOR4_LOCK, doors_client);
 				}
 				else if (button == gButtonA)
 				{
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR1_LOCK);
+						send_lock(CAN_DOOR1_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR1_LOCK);
+						send_unlock(CAN_DOOR1_LOCK, doors_client);
 					}
 					kk_check(SDLK_a);
 				}
@@ -1039,11 +1158,11 @@ int main(int argc, char *argv[])
 				{
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR2_LOCK);
+						send_lock(CAN_DOOR2_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR2_LOCK);
+						send_unlock(CAN_DOOR2_LOCK, doors_client);
 					}
 					kk_check(SDLK_b);
 				}
@@ -1051,11 +1170,11 @@ int main(int argc, char *argv[])
 				{
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR3_LOCK);
+						send_lock(CAN_DOOR3_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR3_LOCK);
+						send_unlock(CAN_DOOR3_LOCK, doors_client);
 					}
 					kk_check(SDLK_x);
 				}
@@ -1063,11 +1182,11 @@ int main(int argc, char *argv[])
 				{
 					if (lock_enabled)
 					{
-						send_lock(CAN_DOOR4_LOCK);
+						send_lock(CAN_DOOR4_LOCK, doors_client);
 					}
 					else if (unlock_enabled)
 					{
-						send_unlock(CAN_DOOR4_LOCK);
+						send_unlock(CAN_DOOR4_LOCK, doors_client);
 					}
 					kk_check(SDLK_y);
 				}

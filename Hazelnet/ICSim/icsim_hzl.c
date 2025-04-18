@@ -501,13 +501,15 @@ int main(int argc, char *argv[]) {
         frame.can_id
       );
 
+      int can_id = frame.can_id;
+
       if (hzlErrCode == HZL_OK)
       {
         // Successful validation and potential decrpytion of the message.
         if(reactionPdu.dataLen > 0) {
             printf("Successful, send reaction back \n");
             memset(&frame, 0, sizeof(frame));
-            frame.can_id = signal_id;
+            frame.can_id = can_id;
             frame.len = reactionPdu.dataLen;
             memcpy(frame.data, reactionPdu.data,sizeof(reactionPdu.data));
             write(can, &frame, CANFD_MTU);

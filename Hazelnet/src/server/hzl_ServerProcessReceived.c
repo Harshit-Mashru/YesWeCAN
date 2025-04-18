@@ -48,6 +48,7 @@ hzl_ServerProcessReceived(hzl_CbsPduMsg_t* const reactionPdu,
     if (reactionPdu == NULL) { return HZL_ERR_NULL_PDU; }
     if (receivedUserData == NULL) { return HZL_ERR_NULL_SDU; }
     HZL_ERR_DECLARE(err);
+    // MY CHECK --> 
     err = hzl_ServerCheckCtxPointers(ctx);
     HZL_ERR_CHECK(err);
     // Get the RX timestamp ASAP to reduce the delays
@@ -67,6 +68,7 @@ hzl_ServerProcessReceived(hzl_CbsPduMsg_t* const reactionPdu,
     receivedUserData->canId = receivedCanId;
     switch (unpackedHdr.pty)
     {
+        // MY CHECK - WHERE REQUEST IS BEING CHECKED USING PTY
         case HZL_PTY_REQ:
             return hzl_ServerProcessReceivedRequest(
                     reactionPdu, ctx,

@@ -104,6 +104,7 @@ hzl_ServerBuildMsgResponse(hzl_CbsPduMsg_t* const msgToTx,
                           encodedRequestNonce,
                           &msgToTx->data[packedHdrLen + HZL_RES_RESNONCE_IDX],
                           clientSid);
+    // MY CHECK
     // Encryption start
     const size_t processedCtLen = hzl_AeadEncryptUpdate(
             &aead,

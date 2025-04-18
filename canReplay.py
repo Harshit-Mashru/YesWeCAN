@@ -7,7 +7,7 @@ import time
 
 def send_can_message(id_hex, dlc, data_hex, interface, bus):
     data = bytes.fromhex(data_hex)
-    message = can.Message(arbitration_id=int(id_hex, 16), dlc=dlc, data=data, is_extended_id=False)
+    message = can.Message(arbitration_id=int(id_hex, 16), dlc=dlc, data=data, is_extended_id=True, is_fd=True)
     
     try:
         bus.send(message)
@@ -20,7 +20,7 @@ def can_replay(interface):
     print(f"Replaying data on {interface}")
     with open('send.log', 'r') as file:
         lines = file.readlines()    
-        bus = can.interface.Bus(channel=interface, interface='socketcan')
+        bus = can.interface.Bus(channel=interface, interface='socketcan', fd=True)
         for line in lines:
             try:
                 match = re.match(r"ID:\s*(\w+),\s*DLC:\s*(\d+),\s*Data:\s*(\w+)", line.strip())

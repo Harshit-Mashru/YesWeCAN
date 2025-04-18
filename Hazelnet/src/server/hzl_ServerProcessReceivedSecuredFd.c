@@ -38,6 +38,8 @@
 #include "hzl_CommonEndian.h"
 #include "hzl_ServerProcessReceived.h"
 
+// Checking previous nonce. Can be exploitable?
+// MY CHECK
 inline static bool
 hzl_ServerIsCtrNonceOfPreviousSession(const hzl_ServerCtx_t* const ctx,
                                       const hzl_CtrNonce_t receivedCtrnonce,
@@ -73,6 +75,7 @@ hzl_ServerCheckRxCtrnonce(bool* const isPreviousSession,
         return HZL_ERR_SECWARN_RECEIVED_OVERFLOWN_NONCE;
     }
     // Check if belongs to the old or new session during a renewal phase
+    // MY CHECK
     const bool isPrevious =
             isPreviousSession != NULL
             && hzl_ServerSessionRenewalPhaseIsActive(ctx, gid)
@@ -81,6 +84,8 @@ hzl_ServerCheckRxCtrnonce(bool* const isPreviousSession,
     hzl_CtrNonce_t selectedCtrNonce;
     if (isPrevious)
     {
+        // Nonce is stored on Group ID basis
+        // MY CHECK
         selectedLastRxTimestamp = ctx->groupStates[gid].previousRxLastMessageInstant;
         selectedCtrNonce = ctx->groupStates[gid].previousCtrNonce;
     }
@@ -92,6 +97,8 @@ hzl_ServerCheckRxCtrnonce(bool* const isPreviousSession,
     // Freshness of received ctrnonce compared to the ctrnonce of the last
     // received message of the previous or current session, depending where
     // the received message belongs.
+    // WAY OF CHECKING THE NONCE!!!!
+    // MY CHECK
     const hzl_CtrNonce_t delay = hzl_CommonCtrDelay(
             selectedLastRxTimestamp,
             rxTimestamp,
@@ -102,6 +109,8 @@ hzl_ServerCheckRxCtrnonce(bool* const isPreviousSession,
     const int32_t oldestToleratedCtrNonce = (int32_t) selectedCtrNonce - (int32_t) delay;
     if ((int32_t) receivedCtrnonce < oldestToleratedCtrNonce)
     {
+        // Checking for replay
+        // MY CHECK
         return HZL_ERR_SECWARN_OLD_MESSAGE;
     }
     if (isPreviousSession != NULL) { *isPreviousSession = isPrevious; }

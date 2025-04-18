@@ -1,5 +1,5 @@
 Since these are .so files, the os needs to know where to look in order to execute correctly
-export LD_LIBRARY_PATH=~/Documents/Hazelnet
+export LD_LIBRARY_PATH=~/kali/SNS_Project/YesWeCAN/Hazelnet
 
 - Then add to bash
 

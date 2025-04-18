@@ -48,6 +48,7 @@ extern "C"
  *
  * Values fit into 3 bits.
  */
+// MY CHECK
 typedef enum hzl_PayloadType
 {
     HZL_PTY_REN = 0U,  ///< Session Renewal Notification

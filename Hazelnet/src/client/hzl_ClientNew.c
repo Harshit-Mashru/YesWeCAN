@@ -102,6 +102,7 @@ hzl_LoadUint8(uint8_t* const value, FILE* const fileStream)
 inline static hzl_Err_t
 hzl_LoadClientConfig(hzl_ClientConfig_t* const config, FILE* const fileStream)
 {
+    // MY CHECK
     HZL_ERR_DECLARE(err);
     err = hzl_LoadUint16Le(&config->timeoutReqToResMillis, fileStream);
     HZL_ERR_CHECK(err);
@@ -121,6 +122,7 @@ hzl_LoadClientConfig(hzl_ClientConfig_t* const config, FILE* const fileStream)
 inline static hzl_Err_t
 hzl_LoadGroupConfig(hzl_ClientGroupConfig_t* const group, FILE* const fileStream)
 {
+    // MY CHECK
     HZL_ERR_DECLARE(err);
     err = hzl_LoadUint32Le(&group->maxCtrnonceDelayMsgs, fileStream);
     HZL_ERR_CHECK(err);

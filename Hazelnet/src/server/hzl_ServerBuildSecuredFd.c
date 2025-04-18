@@ -62,6 +62,7 @@ hzl_ServerBuildMsgSadfd(hzl_CbsPduMsg_t* const msgToTx,
                         const hzl_Gid_t groupId)
 {
     // Prepare SADFD Header
+    // MY CHECK
     const hzl_Header_t unpackedSadfdHeader = {
             .gid = groupId,
             .sid = HZL_SERVER_SID,
@@ -74,6 +75,8 @@ hzl_ServerBuildMsgSadfd(hzl_CbsPduMsg_t* const msgToTx,
     // Write the packed header at the beginning of the CAN FD frame's payload.
     headerPackFunc(msgToTx->data, &unpackedSadfdHeader);
     // Write counter nonce after the header
+    // MY CHECK
+    // Writing nonce here
     hzl_EncodeLe24(&msgToTx->data[packedHdrLen + HZL_SADFD_CTRNONCE_IDX],
                    ctx->groupStates[groupId].currentCtrNonce);
     msgToTx->data[packedHdrLen + HZL_SADFD_PTLEN_IDX] = (uint8_t) userDataLen;
@@ -84,6 +87,11 @@ hzl_ServerBuildMsgSadfd(hzl_CbsPduMsg_t* const msgToTx,
                             &unpackedSadfdHeader,
                             ctx->groupStates[groupId].currentCtrNonce,
                             (uint8_t) userDataLen);
+        // MY CHECK
+        // MY CHECK
+        // MY CHECK VERY IMPORTANT
+        // USER DATA ={1,2,3,4}
+        // USER DATA ={A,B,C,D,E}
     const size_t processedPtLen = hzl_AeadEncryptUpdate(
             &aead,
             &msgToTx->data[packedHdrLen + HZL_SADFD_CTEXT_IDX],  // Output: ciphertext

@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/jaichauhan/Documents/Hazelnet
+CMAKE_SOURCE_DIR = /home/kali/SNS_Project/YesWeCAN/Hazelnet
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/jaichauhan/Documents/Hazelnet
+CMAKE_BINARY_DIR = /home/kali/SNS_Project/YesWeCAN/Hazelnet
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -97,9 +97,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jaichauhan/Documents/Hazelnet/CMakeFiles /home/jaichauhan/Documents/Hazelnet//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/kali/SNS_Project/YesWeCAN/Hazelnet/CMakeFiles /home/kali/SNS_Project/YesWeCAN/Hazelnet//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/jaichauhan/Documents/Hazelnet/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/kali/SNS_Project/YesWeCAN/Hazelnet/CMakeFiles 0
 .PHONY : all
 
 # The main clean target

@@ -51,6 +51,8 @@ hzl_CommonAeadInitSadfd(hzl_Aead_t* const aead,
     hzl_EncodeLe24(&aeadNonce[HZL_SADFD_AEADNONCE_CTR_IDX], ctrnonce);
     aeadNonce[HZL_SADFD_AEADNONCE_GID_IDX] = unpackedSadfdHeader->gid;
     aeadNonce[HZL_SADFD_AEADNONCE_SID_IDX] = unpackedSadfdHeader->sid;
+    // MY CHECK
+    // STK IS THE KEYYYYYYYY
     hzl_AeadInit(aead, stk, aeadNonce);
 
     // Associated data = label || GID || SID || PTY || ptlen

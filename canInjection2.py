@@ -8,7 +8,9 @@ import argparse
 
 def send_can_message(id_hex, dlc, data_hex, interface, bus):
     data = bytes.fromhex(data_hex)
-    message = can.Message(arbitration_id=int(id_hex, 16), dlc=dlc, data=data, is_extended_id=True, is_fd=True)
+    print(id_hex)
+    print(int(id_hex, 16))
+    message = can.Message(arbitration_id=int(id_hex, 16), dlc=dlc, data=data, is_extended_id=False, is_fd=True)
     
     try:
         bus.send(message)
@@ -20,7 +22,7 @@ def can_inject(interface, args):
     bus = Bus(interface='socketcan', channel=interface, fd=True)
 
     print(f"Injecting data as per your input {interface}")
-    dlc = 6
+    dlc = 3
     data_hex = args.value
     id = args.component
     print(id)
